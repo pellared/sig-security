@@ -1,0 +1,28 @@
+name: Reproduce feedback-label warning
+
+on:
+  push:
+    branches:
+      - diagnostics/feedback-label-zizmor
+
+permissions: {}
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install Zizmor 1.31.1
+        run: |
+          python3 -m venv "$RUNNER_TEMP/zizmor-repro"
+          "$RUNNER_TEMP/zizmor-repro/bin/pip" install --disable-pip-version-check zizmor==1.31.1
+
+      - name: Fetch the original workflow before PR 344
+        run: |
+          mkdir -p .github/workflows
+          curl --fail --silent --show-error \
+            https://raw.githubusercontent.com/open-telemetry/sig-security/43299c8033eb73c1e41c136264d9cae2911ca8c2/.github/workflows/issue-management-feedback-label.yml \
+            --output .github/workflows/issue-management-feedback-label.yml
+
+      - name: Reproduce the pre-existing dangerous-triggers finding
+        run: '"$RUNNER_TEMP/zizmor-repro/bin/zizmor" --offline --strict-collection .github/workflows/issue-management-feedback-label.yml'
